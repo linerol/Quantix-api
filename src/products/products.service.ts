@@ -45,4 +45,8 @@ export class ProductsService {
     }
     return product;
   }
+
+  async deleteAllByUserId(userId: string): Promise<void> {
+    await this.productModel.deleteMany({ userId }).exec();
+  }
 } 

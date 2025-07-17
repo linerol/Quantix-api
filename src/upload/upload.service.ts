@@ -57,4 +57,10 @@ export class UploadService {
     }, sharedKeyCredential).toString();
     return `${blobClient.url}?${sas}`;
   }
+
+  async deleteImage(blobName: string): Promise<void> {
+    const containerClient = this.blobServiceClient.getContainerClient(this.containerName);
+    const blobClient = containerClient.getBlobClient(blobName);
+    await blobClient.deleteIfExists();
+  }
 } 

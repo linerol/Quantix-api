@@ -96,7 +96,9 @@ export class ProductsController {
   @Patch(':id')
   @ApiOperation({ summary: 'Mettre à jour un produit (appartenant à l\'utilisateur connecté)' })
   @ApiParam({ name: 'id', description: 'ID du produit', example: '507f7786d79943911' })
+  @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UpdateProductDto })
+  @UseInterceptors(FileInterceptor('image'))
   @ApiResponse({
     status: 200,
     description: 'Produit mis à jour avec succès',
@@ -110,8 +112,32 @@ export class ProductsController {
     status: 401,
     description: 'Non autorisé - Token JWT requis'
   })
-  update(@Param('id') id: string, @Body() updateProductDto: UpdateProductDto, @CurrentUser() user: any) {
-    return this.productsService.update(id, updateProductDto, user.userId);
+  async update(
+    @Param('id') id: string,
+    @Body() updateProductDto: UpdateProductDto,
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: any,
+  ) {
+    // Récupérer le produit existant
+    const existingProduct = await this.productsService.findOne(id, user.userId);
+    let newImageUrl = existingProduct.imageUrl;
+    let oldBlobName: string | undefined;
+    if (file) {
+      // Upload de la nouvelle image
+      newImageUrl = await this.uploadService.uploadImage(file);
+      // Préparer la suppression de l'ancienne image
+      if (existingProduct.imageUrl) {
+        const parts = existingProduct.imageUrl.split('/');
+        oldBlobName = parts[parts.length - 1];
+      }
+    }
+    // Mettre à jour le produit
+    const updated = await this.productsService.update(id, { ...updateProductDto, imageUrl: newImageUrl }, user.userId);
+    // Supprimer l'ancienne image si besoin (après update pour éviter perte d'image)
+    if (file && oldBlobName) {
+      await this.uploadService.deleteImage(oldBlobName);
+    }
+    return updated;
   }
 
   @Delete(':id')

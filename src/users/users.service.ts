@@ -3,10 +3,14 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './user.schema';
 import * as bcrypt from 'bcrypt';
+import { ProductsService } from '../products/products.service';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {
+  constructor(
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+    private productsService: ProductsService,
+  ) {
   }
 
   async create(email: string, password: string): Promise<User> {
@@ -41,6 +45,7 @@ export class UsersService {
   }
 
   async delete(id: string): Promise<User | null> {
+    await this.productsService.deleteAllByUserId(id);
     return this.userModel.findByIdAndDelete(id).exec();
   }
 } 
