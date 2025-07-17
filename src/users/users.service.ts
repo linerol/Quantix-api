@@ -2,6 +2,7 @@ import { Injectable, ConflictException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User, UserDocument } from './user.schema';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
@@ -13,8 +14,8 @@ export class UsersService {
     if (existingUser) {
       throw new ConflictException('Un utilisateur avec cet email existe déjà');
     }
-    
-    const user = new this.userModel({ email, password });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const user = new this.userModel({ email, password: hashedPassword });
     return user.save();
   }
 
@@ -32,6 +33,11 @@ export class UsersService {
 
   async update(id: string, updateData: Partial<User>): Promise<User | null> {
     return this.userModel.findByIdAndUpdate(id, updateData, { new: true }).exec();
+  }
+
+  async updatePassword(id: string, newPassword: string): Promise<User | null> {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    return this.userModel.findByIdAndUpdate(id, { password: hashedPassword }, { new: true }).exec();
   }
 
   async delete(id: string): Promise<User | null> {

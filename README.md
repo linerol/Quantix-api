@@ -21,7 +21,7 @@ Backend NestJS modulaire, sécurisé, prêt pour la production, avec gestion d�
 ## 🚀 Fonctionnalités
 
 - **Authentification sécurisée** (inscription, login, JWT, bcrypt, Passport.js)
-- **Gestion des utilisateurs** (CRUD, email unique)
+- **Gestion des utilisateurs** (CRUD, email unique, récupération du profil, changement de mot de passe, suppression de compte, mot de passe hashé)
 - **Gestion des produits** (CRUD, chaque user a ses propres produits)
 - **Upload d’images produits** (Azure Blob Storage, URL publique)
 - **Validation des données** (class-validator)
@@ -167,6 +167,48 @@ Authorization: Bearer <jwt_token>
 
 ---
 
+#### Utilisateur (JWT requis)
+
+**Récupérer le profil utilisateur actuel**
+```http
+GET /users/me
+Authorization: Bearer <jwt_token>
+```
+**Réponse**
+```json
+{
+  "_id": "...",
+  "email": "user@example.com",
+  ...
+}
+```
+
+**Changer le mot de passe**
+```http
+PATCH /users/me/password
+Authorization: Bearer <jwt_token>
+Content-Type: application/json
+
+{
+  "newPassword": "nouveau_mot_de_passe"
+}
+```
+**Réponse**
+```json
+{
+  "message": "Mot de passe modifié"
+}
+```
+
+**Supprimer son compte**
+```http
+DELETE /users/me
+Authorization: Bearer <jwt_token>
+```
+**Réponse** : 204 No Content
+
+---
+
 ## ☁️ Intégration Azure Blob Storage
 
 ### Étapes de configuration
@@ -178,8 +220,8 @@ Authorization: Bearer <jwt_token>
 ### Fonctionnement
 
 - Lors de la création d’un produit, l’image est uploadée sur Azure.
-- L’URL publique est stockée dans le champ `imageUrl` du produit.
-- Le front peut afficher l’image via cette URL.
+- L’URL SAS temporaire (sécurisée) est stockée dans le champ `imageUrl` du produit lors de la récupération.
+- Le front peut afficher l’image via cette URL tant qu’elle est valide.
 
 ---
 
