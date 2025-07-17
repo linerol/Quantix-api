@@ -48,8 +48,20 @@ export class ProductsController {
     status: 401,
     description: 'Non autorisé - Token JWT requis'
   })
-  findAll(@CurrentUser() user: any) {
-    return this.productsService.findAll(user.userId);
+  async findAll(@CurrentUser() user: any) {
+    const products = await this.productsService.findAll(user.userId);
+    return products.map(product => {
+      if (product.imageUrl) {
+        // Extraire le nom du blob à partir de l'URL
+        const parts = product.imageUrl.split('/');
+        const blobName = parts[parts.length - 1];
+        return {
+          ...JSON.parse(JSON.stringify(product)),
+          imageUrl: this.uploadService.generateSasUrl(blobName)
+        };
+      }
+      return product;
+    });
   }
 
   @Get(':id')
@@ -68,8 +80,17 @@ export class ProductsController {
     status: 401,
     description: 'Non autorisé - Token JWT requis'
   })
-  findOne(@Param('id') id: string, @CurrentUser() user: any) {
-    return this.productsService.findOne(id, user.userId);
+  async findOne(@Param('id') id: string, @CurrentUser() user: any) {
+    const product = await this.productsService.findOne(id, user.userId);
+    if (product.imageUrl) {
+      const parts = product.imageUrl.split('/');
+      const blobName = parts[parts.length - 1];
+      return {
+        ...JSON.parse(JSON.stringify(product)),
+        imageUrl: this.uploadService.generateSasUrl(blobName)
+      };
+    }
+    return product;
   }
 
   @Patch(':id')
