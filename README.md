@@ -152,7 +152,7 @@ JWT_SECRET=votre_secret_jwt_tres_securise_ici
 PORT=3000```
 
 4. **Démarrer MongoDB**
-```bash
+
 # Local
 mongod
 
@@ -176,15 +176,19 @@ npm run start:prod
 #### POST `/auth/register`
 Inscription d'un nouvel utilisateur
 ```json
-[object Object]email":user@example.com,
-  ssword": "password123}
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
 ```
 
 **Réponse :**
-```json[object Object]
-  access_token:jwt_token_here,
- user":[object Object]   id": "user_id",
- email":user@example.com"
+```json
+{
+  "access_token": "jwt_token_here",
+  "user": {
+    "id": "user_id",
+    "email": "user@example.com"
   }
 }
 ```
@@ -192,15 +196,19 @@ Inscription d'un nouvel utilisateur
 #### POST `/auth/login`
 Connexion utilisateur
 ```json
-[object Object]email":user@example.com,
-  ssword": "password123}
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
 ```
 
 **Réponse :**
-```json[object Object]
-  access_token:jwt_token_here,
- user":[object Object]   id": "user_id",
- email":user@example.com"
+```json
+{
+  "access_token": "jwt_token_here",
+  "user": {
+    "id": "user_id",
+    "email": "user@example.com"
   }
 }
 ```
@@ -220,9 +228,11 @@ Récupérer un produit spécifique de l'utilisateur connecté
 #### POST `/products`
 Créer un nouveau produit pour l'utilisateur connecté
 ```json
-[object Object]name":Produit Test",
- price": 29.99
-  quantity": 100imageUrl": "https://example.com/image.jpg"
+{
+  "name": "Produit Test",
+  "price": 29.99,
+  "quantity": 100,
+  "imageUrl": "https://example.com/image.jpg"
 }
 ```
 
@@ -230,9 +240,9 @@ Créer un nouveau produit pour l'utilisateur connecté
 Mettre à jour un produit de l'utilisateur connecté
 ```json
 {
-name: Nouveau nom",
- price": 39.99,
- quantity": 50
+  "name": "Nouveau nom",
+  "price": 39.99,
+  "quantity": 50
 }
 ```
 
@@ -351,135 +361,4 @@ const productResponse = await fetch(http://localhost:30ducts',[object Object]  m
 ## 🔧 Développement
 
 ### Scripts disponibles
-- `npm run start:dev` : Mode développement avec hot reload
-- `npm run build` : Compilation TypeScript
-- `npm run start:prod` : Mode production
-- `npm run lint` : Vérification du code
-- `npm run format` : Formatage du code
-
-### Structure des données
-
-#### User Schema
-```typescript[object Object]
-  email: string (unique),
-  password: string (hashé),
-  createdAt: Date,
-  updatedAt: Date
-}
-```
-
-#### Product Schema
-```typescript
-[object Object]
-  name: string,
-  price: number (min: 0),
-  quantity: number (min: 0),
-  imageUrl?: string,
-  userId: ObjectId (référence vers User),
-  createdAt: Date,
-  updatedAt: Date
-}
-```
-
-## 📖 Documentation Swagger
-
-Une fois l'application démarrée, vous pouvez accéder à la documentation interactive Swagger sur :
-```
-http://localhost:3000`
-
-Cette interface vous permet de :
-- Tester toutes les routes directement
-- Voir les schémas de données
-- Authentifier vos requêtes avec le bouton Authorize"
-- Exécuter des requêtes avec des exemples pré-remplis
-
-## ☁️ Intégration Azure Blob Storage pour l’upload d’images produits
-
-### Prérequis Azure
-
-1. **Créer un Storage Account sur Azure**
-   - Connecte-toi sur https://portal.azure.com
-   - Recherche "Storage accounts" puis clique sur "Create"
-   - Remplis les champs :
-     - Resource group : crée-en un si besoin
-     - Storage account name : ex. moninventaireimg
-     - Region : France ou Europe
-     - Performance : Standard
-     - Redundancy : LRS (le plus économique)
-   - Clique sur Review + Create, puis sur Create
-
-2. **Créer un container Blob**
-   - Va dans ton Storage Account > "Containers"
-   - Clique sur + Container
-   - Nom : `image` (ou autre, mais adapte la variable d’environnement)
-   - Public access level : `Blob (anonymous read access for blobs only)` pour que l’image soit visible via URL
-   - Clique sur Create
-
-3. **Récupérer les infos de connexion**
-   - Va dans ton Storage Account > "Access keys"
-   - Copie :
-     - `AZURE_STORAGE_ACCOUNT_NAME`
-     - `AZURE_STORAGE_ACCOUNT_KEY`
-   - Mets-les dans ton fichier `.env` :
-     ```env
-     AZURE_STORAGE_ACCOUNT_NAME=ton_account_name
-     AZURE_STORAGE_ACCOUNT_KEY=ta_cle_azure
-     AZURE_BLOB_CONTAINER_NAME=image
-     ```
-
-### Fonctionnement dans l’API
-
-- Lors de la création d’un produit (`POST /products`), tu peux envoyer un champ `image` (fichier) via Swagger ou un client HTTP.
-- L’image est uploadée sur Azure Blob Storage dans le container choisi.
-- L’URL publique de l’image est automatiquement stockée dans le champ `imageUrl` du produit et renvoyée dans la réponse.
-- Le backend gère le bon Content-Type (image/png, image/jpeg, etc.)
-
-**Exemple de réponse produit :**
-```json
-{
-  "_id": "...",
-  "name": "Produit Test",
-  "price": 29.99,
-  "quantity": 10,
-  "imageUrl": "https://ton_account_name.blob.core.windows.net/image/nom-fichier.png",
-  ...
-}
-```
-
-**Sécurité :**
-- Le container doit être en accès public (niveau Blob) pour que le front puisse afficher l’image via l’URL.
-- Les credentials Azure ne sont jamais exposés côté client.
-
-## 🏛️ Design Patterns utilisés
-
-L’API suit plusieurs patterns de conception reconnus pour garantir la maintenabilité, la testabilité et la scalabilité du code :
-
-- **Architecture modulaire (Module Pattern)** :
-  - Chaque domaine fonctionnel (auth, users, products, upload) est isolé dans son propre module.
-- **Service/Repository Pattern** :
-  - Les services (`*.service.ts`) gèrent la logique métier et orchestrent les accès aux données via Mongoose (Repository).
-- **DTO (Data Transfer Object)** :
-  - Les DTOs (`*.dto.ts`) définissent les schémas d’entrée/sortie des routes, facilitent la validation et la documentation Swagger.
-- **Guards & Middleware** :
-  - Utilisation de `JwtAuthGuard` pour la protection des routes sensibles.
-- **Strategy Pattern** :
-  - Utilisé pour l’authentification avec Passport.js et la stratégie JWT (`jwt.strategy.ts`).
-- **Decorator Pattern** :
-  - Utilisation de décorateurs personnalisés (`@CurrentUser()`) pour injecter l’utilisateur courant dans les contrôleurs.
-- **Dependency Injection** :
-  - Tous les services, modules et providers sont injectés via le système d’injection de dépendances de NestJS.
-- **Validation & Transformation** :
-  - Utilisation de `class-validator` et `class-transformer` pour valider et transformer les données entrantes.
-
-Ces patterns assurent un code clair, évolutif, facilement testable et conforme aux bonnes pratiques NestJS/Node.js.
-
-## 🤝 Contribution
-
-1. Fork le projet2 Créer une branche feature (`git checkout -b feature/AmazingFeature`)
-3. Commit les changements (`git commit -mAdd some AmazingFeature'`)
-4. Push vers la branche (`git push origin feature/AmazingFeature`)
-5. Fais une Pull Request
-
-## 📄 Licence
-
-Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
+- `npm run start:dev`
